@@ -7,21 +7,22 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
+
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Entity
-@Table(name = "book")
-public class Book {
+@Table(name = "user")
+public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String title;
-    private String description;
-    private double price;
+    private String name;
+    private String surname;
+    private String email;
+    private String password;
     @Enumerated(EnumType.STRING)
-    private BookLanguage language;
-    @ManyToOne
-    private Author author;
+    private Role role;
 }

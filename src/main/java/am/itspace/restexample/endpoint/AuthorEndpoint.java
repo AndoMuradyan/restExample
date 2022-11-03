@@ -1,71 +1,59 @@
 package am.itspace.restexample.endpoint;
 
+import am.itspace.restexample.dto.AuthorResponseDto;
+import am.itspace.restexample.dto.CreateAuthorDto;
+import am.itspace.restexample.mapper.AuthorMapper;
 import am.itspace.restexample.model.Author;
-import org.springframework.http.HttpStatus;
+import am.itspace.restexample.repository.AuthorRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
+@RequiredArgsConstructor
 public class AuthorEndpoint {
-    List<Author> authors = new ArrayList<>(List.of(
-            new Author(1, "poxos", "poxosyan", 17),
-            new Author(2, "petros", "petrosyan", 25),
-            new Author(3, "martiros", "martirosyan", 35)
-    ));
+
+
+    private final AuthorRepository authorRepository;
+    private final AuthorMapper authorMapper;
 
     @GetMapping("/authors")
-    public List<Author> getAllAuthors() {
-        return authors;
+    public List<AuthorResponseDto> getAllAuthors() {
+        return authorMapper.map(authorRepository.findAll());
     }
 
     @GetMapping("/authors/{id}")
     public ResponseEntity<Author> getAuthorId(@PathVariable("id") int id) {
-        for (Author author : authors) {
-            if (author.getId() == id) {
-                return ResponseEntity.ok(author);
-            }
+        Optional<Author> byId = authorRepository.findById(id);
+        if (byId.isEmpty()) {
+
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(byId.get());
     }
 
     @PostMapping("/authors")
-    public ResponseEntity<?> createAuthor(@RequestBody Author author) {
-        for (Author authorFromDb : authors) {
-            if (authorFromDb.getName().equals(author.getName())
-                    && authorFromDb.getSurname().equals(author.getSurname())) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
-            }
-        }
-        authors.add(author);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> createAuthor(@RequestBody CreateAuthorDto createAuthorDto) {
+        Author saveAuthor = authorRepository.save(authorMapper.map(createAuthorDto));
+        return ResponseEntity.ok(saveAuthor);
     }
 
     @PutMapping("/authors")
     public ResponseEntity<Author> updateAuthor(@RequestBody Author author) {
-        if (author.getId() > 0) {
-            for (Author authorFromDb : authors) {
-                if (authorFromDb.getId() == author.getId()) {
-                    authorFromDb.setName(author.getName());
-                    authorFromDb.setSurname(author.getSurname());
-                    authorFromDb.setAge(author.getAge());
-                    return ResponseEntity.ok(authorFromDb);
-                }
-            }
+        if (author.getId() == 0) {
+            return ResponseEntity.badRequest().build();
+
         }
-        return ResponseEntity.notFound().build();
+        authorRepository.save(author);
+        return ResponseEntity.ok(author);
     }
 
     @DeleteMapping("/authors/{id}")
     public ResponseEntity<?> deleteAuthorById(@PathVariable("id") int id) {
-        for (Author author : authors) {
-            if (author.getId() == id) {
-                authors.remove(author);
-                return ResponseEntity.noContent().build();
-            }
-        }
+        authorRepository.deleteById(id);
         return ResponseEntity.notFound().build();
     }
 }
